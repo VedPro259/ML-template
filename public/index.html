@@ -1,0 +1,82 @@
+<head></head>
+<body></body>
+
+<div>Teachable Machine Image Model</div>
+<button type="button" onclick="init()">Start</button>
+<div id="webcam-container"></div>
+<div id="label-container"></div>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js'></script>
+<script type="text/javascript">
+
+var socket = io('http://localhost:3500/'); 
+
+    const URL = "enter-url"; //enter ML model here
+
+    let model, webcam, labelContainer, maxPredictions;
+
+    async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        const flip = true; 
+        webcam = new tmImage.Webcam(200, 200, flip); 
+        await webcam.setup(); 
+        await webcam.play();
+        window.requestAnimationFrame(loop);
+
+        document.getElementById("webcam-container").appendChild(webcam.canvas);
+        labelContainer = document.getElementById("label-container");
+        for (let i = 0; i < maxPredictions; i++) { 
+            labelContainer.appendChild(document.createElement("div"));
+        }
+    }
+
+    async function loop() {
+        webcam.update(); 
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+    let toggle1 = false; 
+    let toggle2 = false; 
+    let toggle3 = false; 
+
+    async function predict() {
+        const prediction = await model.predict(webcam.canvas);
+        for (let i = 0; i < maxPredictions; i++) {
+            const classPrediction =
+                prediction[i].className + ": " + prediction[i].probability.toFixed(2);
+                if (prediction[i].probability.toFixed(2) > 0.5 && prediction[i].className === "Class 1") {
+        if (!toggle1) {
+            console.log("Sending Class 1");
+            toggle1 = true;
+            toggle2 = false; 
+            toggle3 = false; 
+            socket.emit('message', '0'); 
+        }
+    } else if (prediction[i].probability.toFixed(2) > 0.5 && prediction[i].className === "Class 2") {
+        if (!toggle2) {
+            console.log('Sending Class 2');
+            toggle2 = true;
+            toggle1 = false; 
+            toggle3 = false; 
+            socket.emit('message', '1');
+        }
+    } else if (prediction[i].probability.toFixed(2) > 0.5 && prediction[i].className === "Class 3") {
+        if (!toggle3) {
+            console.log('Sending Class 3');
+            toggle3 = true;
+            toggle1 = false; 
+            toggle2 = false; 
+            socket.emit('message', '2');
+        }
+    }
+            labelContainer.childNodes[i].innerHTML = classPrediction;
+        }
+    }
+</script>
