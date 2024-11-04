@@ -1,29 +1,32 @@
-#include <Servo.h> 
-
-Servo myservo; 
+int redLED = 13;
+int greenLED = 2;
 
 void setup() {
-  myservo.attach(9);
   Serial.begin(9600); 
-  myservo.write(); // enter value 
+  pinMode(redLED, OUTPUT);
+  pinMode(greenLED, OUTPUT);
 
 }
 
 void loop() {
+  // put your main code here, to run repeatedly:
 }
 
 void serialEvent() {
   while (Serial.available()) {
     char command = Serial.read();
-    Serial.flush(); 
+    Serial.flush(); // Clear the serial buffer
     if (command == '0') {
-      myservo.write(); //enter value
+      digitalWrite(redLED, HIGH);
+      digitalWrite(greenLED, LOW);
     }
     if (command == '1') {
-      myservo.write(); //enter value
+      digitalWrite(redLED, LOW);
+      digitalWrite(greenLED, HIGH);
     }
     if (command == '2') {
-      myservo.write(); //enter value
+      digitalWrite(redLED, LOW);
+      digitalWrite(greenLED, LOW); 
     }
   }
 }
